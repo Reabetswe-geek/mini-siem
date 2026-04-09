@@ -1,15 +1,14 @@
-
 import argparse
 import time
 from collections import defaultdict
 
 print("=" * 50)
-print("    Mini SIEM log analyzer")
+print("  MINI SIEM/LOG Analyzer v2")
 print("=" * 50)
 
-parser = argparse.ArgumentParser(description="Mini Siem Tool")
-parser.add_argument("--file", default="sample.log", help="log file to analyze")
-parser.add_argument("--live", action="store_true", help="Enable real-time monitoring")
+parser = argparse.ArgumentParser(description="MINI SIEM TOOL")
+parser.add_argument("--file", default="sample", help="log file to analyze")
+parser.add_argument("--live", action="store_true", help="Enable real time-time monitoring")
 
 args = parser.parse_args()
 
@@ -23,8 +22,8 @@ def analyze_line(line):
         ip = line.split()[-1]
         failed_logins[ip] += 1
 
-    if failed_logins[ip] == 3:
-        print(f"[ALERT] Brute force suspected from {ip} (3 failed attempts)")
+        if failed_logins[ip] == 3:
+            print(f"[ALERT] Brute force suspected from {ip} (3 failed attempts)")
 
     if "Port scan" in line:
         ip = line.split()[-1]
@@ -38,20 +37,19 @@ def analyze_file():
             analyze_line(line)
 
 def monitor_live():
-    print("\n[+] Monitoring log file in real-time...\n")
+    print("\n[+] Monitoring log file in real time...\n")
     with open(args.file, "r") as file:
         file.seek(0, 2)
 
-        while True:
-            line = file.readline()
-            if not line:
-                time.sleep(1) 
-                continue 
-            analyze_line(line)
+    while True:
+        line = file.readline()
+        if not line:
+            time.sleep(1)
+            continue
+        analyze_line(line)
 
 if args.live:
     monitor_live()
 else:
-    print("\n[+] Analyzing log file...\n")
-
+    print("\n[+} Analyzing log file...\n")
     analyze_file()
