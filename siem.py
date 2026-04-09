@@ -1,29 +1,57 @@
+
+import argparse
+import time
 from collections import defaultdict
 
 print("=" * 50)
 print("    Mini SIEM log analyzer")
 print("=" * 50)
 
+parser = argparse.ArgumentParser(description="Mini Siem Tool")
+parser.add_argument("--file", default="sample.log", help="log file to analyze")
+parser.add_argument("--live", action="store_true", help="Enable real-time monitoring")
+
+args = parser.parse_args()
+
 failed_logins = defaultdict(int)
 suspicious_ips = set()
 
-with open("sample.log", "r") as file:
-    for line in file:
-        line = line.strip()
+def analyze_line(line):
+    line = line.strip()
 
-        if "Failed password" in line:
-            ip = line.split()[-1]
-            failed_logins[ip] += 1
+    if "Failed password" in line:
+        ip = line.split()[-1]
+        failed_logins[ip] += 1
 
-        if "Port scan" in line:
-            ip = line.split()[-1]
+    if failed_logins[ip] == 3:
+        print(f"[ALERT] Brute force suspected from {ip} (3 failed attempts)")
+
+    if "Port scan" in line:
+        ip = line.split()[-1]
+        if ip not in suspicious_ips:
             suspicious_ips.add(ip)
+            print(f"[ALERT] Port scanning detected from {ip}")
 
-print("\n[!] Suspicious Activity Report\n")
+def analyze_file():
+    with open(args.file, "r") as file:
+        for line in file:
+            analyze_line(line)
 
-for ip, count in failed_logins.items():
-    if count >= 3:
-        print(f"ALERT: Possible brute force from {ip} ({count} failed attempts)")
+def monitor_live():
+    print("\n[+] Monitoring log file in real-time...\n")
+    with open(args.file, "r") as file:
+        file.seek(0, 2)
 
-for ip in suspicious_ips:
-    print(f"ALERT: Port scanning detected from {ip}")
+        while True:
+            line = file.readline()
+            if not line:
+                time.sleep(1) 
+                continue 
+            analyze_line(line)
+
+if args.live:
+    monitor_live()
+else:
+    print("\n[+] Analyzing log file...\n")
+
+    analyze_file()
