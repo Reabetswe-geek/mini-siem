@@ -1,55 +1,31 @@
-import argparse
-import time
+import re
 from collections import defaultdict
 
-print("=" * 50)
-print("  MINI SIEM/LOG Analyzer v2")
-print("=" * 50)
+def extract_ip(line):
+    print("CHECKING LINE FOR IP:", line)
+    return None
 
-parser = argparse.ArgumentParser(description="MINI SIEM TOOL")
-parser.add_argument("--file", default="sample", help="log file to analyze")
-parser.add_argument("--live", action="store_true", help="Enable real time-time monitoring")
+def analyze_logs(file_path):
+    failed = 0
+    successful = 0
+    with open(file_path, "r") as file:
+       for line in file:
+            clean_line = line.strip().lower()
+            if "failed password" in clean_line:
+                failed += 1
+            elif "accepted password" in clean_line:
+                successful += 1
 
-args = parser.parse_args()
+    print("\n=== SIEM REPORT ===\n")
+    print(f"Failed login attempts: {failed}")
+    print(f" Successful logins: {successful}")
 
-failed_logins = defaultdict(int)
-suspicious_ips = set()
+    if failed >= 3:
+        print("\n[ALERT] Possible brute-force attack detected!")
 
-def analyze_line(line):
-    line = line.strip()
+def main():
+    file_path = "sample.log"
+    analyze_logs(file_path)
 
-    if "Failed password" in line:
-        ip = line.split()[-1]
-        failed_logins[ip] += 1
-
-        if failed_logins[ip] == 3:
-            print(f"[ALERT] Brute force suspected from {ip} (3 failed attempts)")
-
-    if "Port scan" in line:
-        ip = line.split()[-1]
-        if ip not in suspicious_ips:
-            suspicious_ips.add(ip)
-            print(f"[ALERT] Port scanning detected from {ip}")
-
-def analyze_file():
-    with open(args.file, "r") as file:
-        for line in file:
-            analyze_line(line)
-
-def monitor_live():
-    print("\n[+] Monitoring log file in real time...\n")
-    with open(args.file, "r") as file:
-        file.seek(0, 2)
-
-    while True:
-        line = file.readline()
-        if not line:
-            time.sleep(1)
-            continue
-        analyze_line(line)
-
-if args.live:
-    monitor_live()
-else:
-    print("\n[+} Analyzing log file...\n")
-    analyze_file()
+if __name__ == "__main__":
+    main()
