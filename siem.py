@@ -39,25 +39,33 @@ def analyze_logs(file_path, windows_minutes=10, threshold=3):
 
     alerts = []
 
+    LOG_FILE = "sample.log"
+    THRESHOLD = 3
+    WINDOW = timedelta(seconds=60)
+
     for ( ip, user ), times in failed_logins.items():
         times.sort()
 
-        for i in range(len(times)):
-            window_start = times[i]
-            window_end = window_start + timedelta(minutes=windows_minutes)
-
-            count_in_window = sum(1 for t in times[i:] if window_start <= t <= window_end)
-
-            if count_in_window >= threshold:
-                alerts.append((ip, user, count_in_window, window_start,window_end))
+        for i in range(len(times) - THRESHOLD + 1):
+            window = times[i:i+THRESHOLD]
+            if window[-1] - window[0] <= WINDOW:
+                alerts.append({
+                    "ip": ip,
+                    "users": user,
+                    "count": THRESHOLD,
+                    "start": window[0].isoformat(),
+                    "end": window[-1].isoformat(),
+                    "detection": "brute_force_window",
+                    "severity": "high"
+                })
                 break
 
     if not alerts:
-        print("No alerts triggered.")
+        print("Np brute force detected")
     else:
-        for ip, user, count,start, end in sorted(alerts, key=lambda x: x[2], reverse=True):
-            print(f"ALERT: {ip} -> {count} failed attempts for user 'user'")
-            print(f"Window: {start.strftime('%H:%M:%S')} to {end.strftime('%H:%M:%S')}\n")
+        print(f"Window: {WINDOW} | Threshold: {THRESHOLD}")
+        for alert in sorted(alerts, key=lambda x: x['count'], reverse=True):
+            print(f"ALERT: {alert['ip']} | users '{alert['users']}' | {alert['count']} fails | {alert['start']} -> {alert['end']}")
 
 def main():
     file_path = input("Enter log file path: ")
